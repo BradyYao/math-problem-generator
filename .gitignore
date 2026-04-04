@@ -1,0 +1,14 @@
+# Design doc artifacts
+*.m4a
+*.mp4
+*.mp3
+
+# App — Node
+papaya/node_modules/
+papaya/.next/
+papaya/.env.local
+papaya/*.tsbuildinfo
+papaya/.vercel/
+
+# OS
+.DS_Store
