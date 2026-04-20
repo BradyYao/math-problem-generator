@@ -61,7 +61,7 @@ export default function OnboardingPage() {
   function handleTimeSelect(minutes: number) {
     if (!grade && !(goal && goal in EXAM_TOPICS)) return;
 
-    const topicIds = (goal && EXAM_TOPICS[goal]) ?? DEFAULT_TOPICS[grade ?? "6-8"] ?? DEFAULT_TOPICS["6-8"];
+    const topicIds = (goal ? EXAM_TOPICS[goal] : null) ?? DEFAULT_TOPICS[grade ?? "6-8"] ?? DEFAULT_TOPICS["6-8"];
     const params = new URLSearchParams({
       topics: topicIds.join(","),
       time: String(minutes),

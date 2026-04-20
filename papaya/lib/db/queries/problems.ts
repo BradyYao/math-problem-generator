@@ -9,7 +9,7 @@ export interface ProblemChoice {
 export interface Problem {
   id: string;
   topic_id: string;
-  difficulty: number;
+  difficulty: 1 | 2 | 3 | 4 | 5;
   answer_type: "mc" | "numeric" | "grid-in";
   stem_latex: string;
   choices: ProblemChoice[] | null;

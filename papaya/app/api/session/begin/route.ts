@@ -9,6 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { nanoid } from "nanoid";
 import { sql } from "@/lib/db";
 import { getUserByClerkId, getUserByGuestToken, createGuestUser } from "@/lib/db/queries/users";
+import type { User } from "@/lib/db/queries/users";
 import { createSession } from "@/lib/db/queries/sessions";
 import { setSessionState } from "@/lib/redis/session-state";
 import { selectProblemsForSession, getSeenProblemIds } from "@/lib/db/queries/problems";
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
         ON CONFLICT (clerk_id) DO UPDATE SET last_active_at = now()
         RETURNING *
       `;
-      user = rows[0] as typeof user;
+      user = rows[0] as User;
     }
   } else {
     const cookieHeader = req.headers.get("cookie") ?? "";
