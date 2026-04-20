@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "psql $DATABASE_URL -f lib/db/migrations/001_initial_schema.sql",
+    "db:migrate": "npx tsx scripts/migrate.ts",
     "db:seed-topics": "npx tsx scripts/seed-topics.ts"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",

@@ -12,3 +12,7 @@ papaya/.vercel/
 
 # OS
 .DS_Store
+
+# Claude Code
+CLAUDE.md
+AGENTS.md

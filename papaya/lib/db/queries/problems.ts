@@ -74,8 +74,15 @@ export async function selectProblemsForSession(
     )
   `;
 
-  // Shuffle the combined result
-  return (rows as Problem[]).sort(() => Math.random() - 0.5);
+  // Deduplicate (possible when difficulty buckets collapse, e.g. atLevel=fluency=1)
+  // then shuffle the combined result
+  const seen = new Set<string>();
+  const unique = (rows as Problem[]).filter(p => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+  return unique.sort(() => Math.random() - 0.5);
 }
 
 export async function getProblemById(id: string): Promise<Problem | null> {
@@ -117,6 +124,20 @@ export async function insertProblem(
     RETURNING *
   `;
   return rows[0] as Problem;
+}
+
+/**
+ * Returns all problem IDs a user has already answered across all sessions.
+ * Used to exclude previously-seen problems when building a new session queue.
+ */
+export async function getSeenProblemIds(userId: string): Promise<string[]> {
+  const rows = await sql`
+    SELECT DISTINCT sa.problem_id::text
+    FROM session_answers sa
+    JOIN sessions s ON s.id = sa.session_id
+    WHERE s.user_id = ${userId}
+  `;
+  return rows.map((r) => (r as { problem_id: string }).problem_id);
 }
 
 export async function updateProblemHints(

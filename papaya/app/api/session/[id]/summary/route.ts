@@ -36,7 +36,7 @@ export async function GET(
     JOIN problems p ON p.id = sa.problem_id
     JOIN topics t ON t.id = p.topic_id
     WHERE sa.session_id = ${sessionId}
-    ORDER BY sa.created_at
+    ORDER BY sa.answered_at
   ` as Array<{
     problem_id: string;
     user_answer: string;

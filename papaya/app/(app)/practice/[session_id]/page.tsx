@@ -131,8 +131,14 @@ export default function PracticeSessionPage({ params }: PageProps) {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Score chip */}
-        <div className="flex justify-end mb-4">
+        {/* Top bar: home link + score */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => router.push("/")}
+            className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            ← Home
+          </button>
           <span className="text-sm font-semibold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
             {store.papayaScore} pts
           </span>

@@ -5,6 +5,10 @@
  * Topics with parent_id must be inserted after their parent,
  * so we insert in sort_order ascending (parents always have lower sort_order).
  */
+import { config } from "dotenv";
+import { join } from "path";
+config({ path: join(process.cwd(), ".env.local") });
+
 import { neon } from "@neondatabase/serverless";
 import taxonomy from "../content/topics/taxonomy.json";
 

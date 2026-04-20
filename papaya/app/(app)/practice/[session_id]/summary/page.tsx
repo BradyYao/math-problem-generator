@@ -139,16 +139,16 @@ export default function SessionSummaryPage({ params }: PageProps) {
         {/* CTAs */}
         <div className="flex gap-3">
           <Link
-            href="/practice"
+            href="/onboarding"
             className="flex-1 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold py-3.5 text-center hover:bg-indigo-50 transition-colors"
           >
             Practice Again
           </Link>
           <Link
-            href="/progress"
+            href="/"
             className="flex-1 rounded-xl bg-indigo-600 text-white font-semibold py-3.5 text-center hover:bg-indigo-700 transition-colors"
           >
-            View Progress
+            Done
           </Link>
         </div>
       </div>

@@ -87,8 +87,3 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
-
-// Suppress unused import warnings
-void displayRegex;
-void inlineRegex;
-void parts;

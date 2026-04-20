@@ -29,6 +29,7 @@ export interface GenerateOptions {
   goalType?: string;
   userId?: string;
   forceNew?: boolean; // always generate fresh (Tier 3)
+  variationSeed?: number; // unique per slot in batch generation — makes each job's cache key distinct
 }
 
 /**
@@ -89,9 +90,14 @@ async function generateWithClaude(options: GenerateOptions): Promise<Problem> {
     goalType: options.goalType,
   });
 
+  // Include variationSeed in the hash so batch jobs each get a distinct cache key,
+  // but don't send it to Claude — the actual prompt stays the same.
+  const hashInput = options.variationSeed != null
+    ? `${userPrompt}__seed_${options.variationSeed}`
+    : userPrompt;
   const promptHash = crypto
     .createHash("sha256")
-    .update(userPrompt)
+    .update(hashInput)
     .digest("hex");
 
   // Check dedup: same prompt within 7 days → reuse

@@ -34,10 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url        text,
   grade_level       smallint CHECK (grade_level BETWEEN 1 AND 12),
   date_of_birth     date,
-  is_minor          boolean GENERATED ALWAYS AS (
-                      date_of_birth IS NOT NULL AND
-                      EXTRACT(YEAR FROM AGE(date_of_birth)) < 13
-                    ) STORED,
+  is_minor          boolean NOT NULL DEFAULT false,
   timezone          text NOT NULL DEFAULT 'America/New_York',
   goal_type         text CHECK (goal_type IN ('sat','act','amc8','amc10','amc12','casual','topic','school')),
   goal_target_date  date,

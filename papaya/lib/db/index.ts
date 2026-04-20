@@ -14,13 +14,17 @@ export function getDb(): NeonQueryFunction<false, false> {
 }
 
 // Convenience proxy — use this in query files
-export const sql: NeonQueryFunction<false, false> = new Proxy({} as NeonQueryFunction<false, false>, {
-  apply(_target, _thisArg, args) {
-    return (getDb() as unknown as (...a: unknown[]) => unknown)(...args);
-  },
-  get(_target, prop) {
-    const db = getDb();
-    const val = (db as unknown as Record<string | symbol, unknown>)[prop];
-    return typeof val === "function" ? val.bind(db) : val;
-  },
-});
+// Target must be a function so tagged template literals (sql`...`) work
+export const sql: NeonQueryFunction<false, false> = new Proxy(
+  function () {} as unknown as NeonQueryFunction<false, false>,
+  {
+    apply(_target, _thisArg, args) {
+      return (getDb() as unknown as (...a: unknown[]) => unknown)(...args);
+    },
+    get(_target, prop) {
+      const db = getDb();
+      const val = (db as unknown as Record<string | symbol, unknown>)[prop];
+      return typeof val === "function" ? val.bind(db) : val;
+    },
+  }
+);

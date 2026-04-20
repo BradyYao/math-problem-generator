@@ -23,8 +23,8 @@ export function AnswerInputMC({
       {choices.map(choice => {
         const isSelected = selected === choice.id;
         const isCorrect = correctAnswer === choice.id;
-        const isWrong = disabled && isSelected && !isCorrect;
-        const showCorrect = disabled && isCorrect;
+        const isWrong = disabled && isSelected && correctAnswer != null && !isCorrect;
+        const showCorrect = disabled && correctAnswer != null && isCorrect;
 
         let borderClass = "border-gray-200 bg-white hover:border-indigo-400 hover:bg-indigo-50";
         if (showCorrect) borderClass = "border-green-500 bg-green-50";

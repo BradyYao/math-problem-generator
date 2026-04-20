@@ -11,6 +11,10 @@
  *   ANSWER_TYPE - "mc", "numeric", or "mixed" (default: "mixed")
  *   DRY_RUN     - "true" to log prompts without calling Claude
  */
+import { config } from "dotenv";
+import { join } from "path";
+config({ path: join(process.cwd(), ".env.local") });
+
 import { neon } from "@neondatabase/serverless";
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
@@ -20,7 +24,7 @@ import katex from "katex";
 
 const DATABASE_URL = process.env.DATABASE_URL!;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
-const COUNT = parseInt(process.env.COUNT ?? "10");
+const COUNT = parseInt(process.env.COUNT ?? "20");
 const DRY_RUN = process.env.DRY_RUN === "true";
 const DIFFICULTY_FILTER = process.env.DIFFICULTY ?? "all";
 const ANSWER_TYPE_PREF = (process.env.ANSWER_TYPE ?? "mixed") as "mc" | "numeric" | "mixed";
@@ -88,7 +92,7 @@ function validateKaTeX(text: string): string | null {
   return null;
 }
 
-async function generateOne(topic: { id: string; name: string; grade_band: string }, difficulty: 1 | 2 | 3 | 4 | 5) {
+async function generateOne(topic: { id: string; name: string; grade_band: string }, difficulty: 1 | 2 | 3 | 4 | 5, variationSeed: number) {
   const answerType = pickAnswerType(topic.grade_band, difficulty);
 
   const answerInstructions = answerType === "mc"
@@ -109,7 +113,10 @@ All math: KaTeX syntax $...$ inline, $$...$$ display.
 Return ONLY valid JSON:
 {"stem_latex":"...","choices":[...]or null,"correct_answer":"...","tolerance":null,"hint_1":"...","hint_2":"...","hint_3":"...","explanation":"...","difficulty":${difficulty}}`;
 
-  const promptHash = crypto.createHash("sha256").update(userPrompt).digest("hex");
+  // Include variationSeed in the hash so each slot in a COUNT run has a unique cache key,
+  // but don't send it to Claude — the actual prompt stays the same.
+  const hashInput = `${userPrompt}__seed_${variationSeed}`;
+  const promptHash = crypto.createHash("sha256").update(hashInput).digest("hex");
 
   // Dedup check
   const existing = await sql`
@@ -208,7 +215,7 @@ async function main() {
     for (const difficulty of DIFFICULTIES) {
       for (let i = 0; i < COUNT; i++) {
         try {
-          await generateOne(topic, difficulty);
+          await generateOne(topic, difficulty, i);
           total++;
         } catch (e) {
           console.error(`  ERROR: ${(e as Error).message}`);
