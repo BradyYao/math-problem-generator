@@ -1,28 +1,7 @@
 import { sql } from "@/lib/db";
+import type { Problem, ProblemChoice } from "@/types/problem";
 
-export interface ProblemChoice {
-  id: string;
-  label: string;
-  latex: string;
-}
-
-export interface Problem {
-  id: string;
-  topic_id: string;
-  difficulty: 1 | 2 | 3 | 4 | 5;
-  answer_type: "mc" | "numeric" | "grid-in";
-  stem_latex: string;
-  choices: ProblemChoice[] | null;
-  correct_answer: string;
-  tolerance: number | null;
-  hint_1: string | null;
-  hint_2: string | null;
-  hint_3: string | null;
-  explanation: string | null;
-  source: "library" | "ai-generated" | "ai-verified";
-  quality_score: number;
-  created_at: string;
-}
+export type { Problem, ProblemChoice };
 
 /** Select problems for a session using the 70/20/10 difficulty mix */
 export async function selectProblemsForSession(
