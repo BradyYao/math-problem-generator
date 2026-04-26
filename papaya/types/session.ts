@@ -58,6 +58,13 @@ export interface ScoreBreakdown {
   total: number;
 }
 
+export interface MilestoneEarned {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
 /** Response from POST /api/session/[id]/answer */
 export interface AnswerResponse {
   is_correct: boolean;
@@ -68,6 +75,7 @@ export interface AnswerResponse {
   next_problem: Problem | null;    // null = session complete
   session_complete: boolean;
   score_breakdown: ScoreBreakdown;
+  milestone_earned: MilestoneEarned | null;
 }
 
 /** Response from GET /api/session/[id]/summary */

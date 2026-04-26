@@ -1,6 +1,7 @@
 export type AnswerType = "mc" | "numeric" | "grid-in";
 export type ProblemSource = "library" | "ai-generated" | "ai-verified";
 export type GradeBand = "k2" | "3-5" | "6-8" | "9-12";
+export type ProblemFormat = "word_problem" | "equation" | "diagram_based";
 
 export interface ProblemChoice {
   id: string;      // 'a' | 'b' | 'c' | 'd'
@@ -17,6 +18,8 @@ export interface Problem {
   choices: ProblemChoice[] | null;
   correct_answer: string;
   tolerance: number | null;
+  answer_label: string | null;
+  problem_format: ProblemFormat | null;
   hint_1: string | null;
   hint_2: string | null;
   hint_3: string | null;
@@ -32,6 +35,8 @@ export interface GeneratedProblem {
   choices: ProblemChoice[] | null;
   correct_answer: string;
   tolerance: number | null;
+  answer_label?: string | null;
+  problem_format?: ProblemFormat | null;
   hint_1: string;
   hint_2: string;
   hint_3: string;

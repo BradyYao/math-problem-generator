@@ -13,7 +13,7 @@ export const PAR_TIMES: Record<number, number> = {
   5: 120,
 };
 
-const HINT_PENALTIES = [0, 1, 3, 6] as const;
+const HINT_PENALTIES = [0, 0, 3, 6] as const;
 
 export interface ProblemScoreParams {
   correct: boolean;

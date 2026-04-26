@@ -2,24 +2,13 @@ import { config } from "dotenv";
 import { join } from "path";
 config({ path: join(process.cwd(), ".env.local") });
 
-import { readFileSync } from "fs";
+import { readdirSync, readFileSync } from "fs";
 import { neon } from "@neondatabase/serverless";
 
-async function main() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL environment variable is not set");
-  }
+async function runMigration(sql: ReturnType<typeof neon>, filePath: string) {
+  const content = readFileSync(filePath, "utf-8");
 
-  const sql = neon(databaseUrl);
-
-  const migration = readFileSync(
-    join(process.cwd(), "lib/db/migrations/001_initial_schema.sql"),
-    "utf-8"
-  );
-
-  // Strip comment lines, split on semicolons, filter empty statements
-  const stripped = migration
+  const stripped = content
     .split("\n")
     .filter((line) => !line.trim().startsWith("--"))
     .join("\n");
@@ -29,14 +18,33 @@ async function main() {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
-  console.log(`Running ${statements.length} statements...`);
-
   for (const statement of statements) {
     await sql.query(statement);
     process.stdout.write(".");
   }
+}
 
-  console.log("\nMigration complete.");
+async function main() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+
+  const sql = neon(databaseUrl);
+  const migrationsDir = join(process.cwd(), "lib/db/migrations");
+
+  const files = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  for (const file of files) {
+    const filePath = join(migrationsDir, file);
+    console.log(`\nRunning ${file}...`);
+    await runMigration(sql, filePath);
+    console.log(` done.`);
+  }
+
+  console.log("\nAll migrations complete.");
 }
 
 main().catch((err) => {

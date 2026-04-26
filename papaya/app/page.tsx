@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Show } from "@clerk/nextjs";
 
 const features = [
   {
@@ -75,21 +74,13 @@ export default function Home() {
           level and available time — with hints that guide you, not just give it
           away.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <div className="mt-8">
           <Link
             href="/onboarding"
             className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 transition-colors"
           >
             Start practicing — it&apos;s free
           </Link>
-          <Show when="signed-out">
-            <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-6 py-3 text-base font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-            >
-              Sign in
-            </Link>
-          </Show>
         </div>
         <p className="mt-4 text-sm text-zinc-400">No account required to start</p>
       </section>

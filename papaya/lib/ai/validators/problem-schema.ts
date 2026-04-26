@@ -11,6 +11,8 @@ export const GeneratedProblemSchema = z.object({
   choices: z.array(ProblemChoiceSchema).length(4).nullable(),
   correct_answer: z.string().min(1),
   tolerance: z.number().nullable(),
+  answer_label: z.string().nullable().optional(),
+  problem_format: z.enum(["word_problem", "equation", "diagram_based"]).optional(),
   hint_1: z.string().min(10),
   hint_2: z.string().min(10),
   hint_3: z.string().min(10),

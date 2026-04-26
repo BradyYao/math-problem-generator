@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { ProblemCard } from "@/components/problem/ProblemCard";
 import { ProblemFeedback } from "@/components/problem/ProblemFeedback";
+import { MilestoneModal } from "@/components/MilestoneModal";
 import { useSessionStore } from "@/stores/session-store";
-import type { AnswerResponse } from "@/types/session";
+import type { AnswerResponse, MilestoneEarned } from "@/types/session";
 import type { Problem } from "@/types/problem";
 
 interface PageProps {
@@ -20,6 +21,7 @@ export default function PracticeSessionPage({ params }: PageProps) {
   const [answer, setAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lastResponse, setLastResponse] = useState<AnswerResponse | null>(null);
+  const [milestone, setMilestone] = useState<MilestoneEarned | null>(null);
 
   // Resume session on mount (cold start or page refresh)
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function PracticeSessionPage({ params }: PageProps) {
       const data: AnswerResponse = await res.json();
       setLastResponse(data);
       store.recordAnswer(data);
+      if (data.milestone_earned) setMilestone(data.milestone_earned);
     } catch {
       // Network failure — allow retry
     } finally {
@@ -173,6 +176,13 @@ export default function PracticeSessionPage({ params }: PageProps) {
           />
         )}
       </div>
+
+      {milestone && (
+        <MilestoneModal
+          milestone={milestone}
+          onClose={() => setMilestone(null)}
+        />
+      )}
     </div>
   );
 }

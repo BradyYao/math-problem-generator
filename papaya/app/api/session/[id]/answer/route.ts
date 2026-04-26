@@ -18,6 +18,8 @@ import { getCachedSkill, setCachedSkill } from "@/lib/redis/skill-cache";
 import { getSkillState, upsertSkillState, DEFAULT_MU, DEFAULT_SIGMA } from "@/lib/db/queries/skills";
 import { getProblemById, selectProblemsForSession } from "@/lib/db/queries/problems";
 import { incrementLeaderboardScore } from "@/lib/redis/leaderboard-cache";
+import { incrementAllTimePoints } from "@/lib/redis/points-cache";
+import { getCrossedMilestones, awardAchievement, type Milestone } from "@/lib/achievements/milestones";
 import { updateSkill, muToTargetDifficulty } from "@/lib/skill/model";
 import { scoreProblem } from "@/lib/scoring/papaya-score";
 import type { Problem } from "@/types/problem";
@@ -99,8 +101,19 @@ export async function POST(
     hintsUsed,
   });
 
+  let milestoneEarned: Pick<Milestone, "id" | "name" | "emoji" | "description"> | null = null;
   if (scoreBreakdown.total > 0) {
     await incrementLeaderboardScore(user.id, scoreBreakdown.total);
+    const newTotal = await incrementAllTimePoints(user.id, scoreBreakdown.total);
+    const prevTotal = newTotal - scoreBreakdown.total;
+    const crossed = getCrossedMilestones(prevTotal, newTotal);
+    for (const milestone of crossed) {
+      const isNew = await awardAchievement(user.id, milestone.id);
+      if (isNew) {
+        milestoneEarned = { id: milestone.id, name: milestone.name, emoji: milestone.emoji, description: milestone.description };
+        break;
+      }
+    }
   }
 
   // ─── Advance session state ───────────────────────────────────────────────
@@ -160,17 +173,23 @@ export async function POST(
 
   return NextResponse.json({
     is_correct,
-    correct_answer: is_correct ? null : problem.correct_answer, // only reveal on wrong
-    explanation: is_correct ? problem.explanation : null,
+    correct_answer: is_correct ? null : problem.correct_answer,
+    explanation: problem.explanation,
     skill_delta: updated.delta,
     papaya_points_earned: scoreBreakdown.total,
     next_problem: nextProblem,
     session_complete: sessionComplete,
     score_breakdown: scoreBreakdown,
+    milestone_earned: milestoneEarned,
   });
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function normalizeAnswer(s: string): string {
+  // Strip "var=" prefix so "x=12" and "n = 5" are treated as "12" and "5"
+  return s.trim().toLowerCase().replace(/^[a-z_][a-z_0-9]*\s*=\s*/i, "");
+}
 
 function checkAnswer(
   userAnswer: string,
@@ -178,8 +197,8 @@ function checkAnswer(
   answerType: string,
   tolerance: number | null
 ): boolean {
-  const ua = userAnswer.trim().toLowerCase();
-  const ca = correctAnswer.trim().toLowerCase();
+  const ua = normalizeAnswer(userAnswer);
+  const ca = normalizeAnswer(correctAnswer);
 
   if (answerType === "mc") {
     return ua === ca;

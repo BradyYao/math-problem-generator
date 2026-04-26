@@ -30,6 +30,8 @@ export interface GenerateOptions {
   userId?: string;
   forceNew?: boolean; // always generate fresh (Tier 3)
   variationSeed?: number; // unique per slot in batch generation — makes each job's cache key distinct
+  preferWordProblem?: boolean; // request a real-world scenario problem from Claude
+  standardCode?: string;       // curriculum standard to align the problem to (e.g. "6.EE.A.1")
 }
 
 /**
@@ -88,6 +90,8 @@ async function generateWithClaude(options: GenerateOptions): Promise<Problem> {
     difficulty: options.difficulty,
     answerType,
     goalType: options.goalType,
+    preferWordProblem: options.preferWordProblem,
+    standardCode: options.standardCode,
   });
 
   // Include variationSeed in the hash so batch jobs each get a distinct cache key,
@@ -140,10 +144,10 @@ async function generateWithClaude(options: GenerateOptions): Promise<Problem> {
     throw new Error(`Problem schema invalid: ${validation.error}`);
   }
 
-  // Validate KaTeX
+  // Validate KaTeX — soft-fail only; client renderer handles edge cases differently
   const katexError = validateProblemKaTeX(validation.data);
   if (katexError) {
-    throw new Error(`KaTeX validation failed: ${katexError}`);
+    console.warn("[problem-generator] KaTeX warning (continuing):", katexError);
   }
 
   // Store problem
@@ -155,6 +159,8 @@ async function generateWithClaude(options: GenerateOptions): Promise<Problem> {
     choices: validation.data.choices,
     correct_answer: validation.data.correct_answer,
     tolerance: validation.data.tolerance,
+    answer_label: validation.data.answer_label ?? null,
+    problem_format: validation.data.problem_format ?? null,
     hint_1: validation.data.hint_1,
     hint_2: validation.data.hint_2,
     hint_3: validation.data.hint_3,

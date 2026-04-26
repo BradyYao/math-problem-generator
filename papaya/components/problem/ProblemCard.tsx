@@ -79,6 +79,7 @@ export function ProblemCard({
           value={selectedAnswer}
           disabled={submitted}
           correctAnswer={submitted ? (correctAnswer ?? null) : undefined}
+          answerLabel={problem.answer_label}
           onChange={onAnswerChange}
           onSubmit={onSubmit}
         />

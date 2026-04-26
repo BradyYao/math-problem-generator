@@ -12,6 +12,7 @@ function NewSessionInner() {
     const topics = searchParams.get("topics");
     const time = searchParams.get("time");
     const mode = searchParams.get("mode") ?? "practice";
+    const standard = searchParams.get("standard");
 
     if (!topics || !time) {
       router.replace("/onboarding");
@@ -27,13 +28,19 @@ function NewSessionInner() {
             topic_ids: topics!.split(","),
             time_budget_minutes: parseInt(time!),
             mode,
+            ...(standard ? { standard_code: standard } : {}),
           }),
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          setError(data.error ?? "Something went wrong. Try again.");
+          const msg = typeof data?.error === "string"
+            ? data.error
+            : res.status === 504 || res.status === 408
+              ? "Session setup timed out — try fewer topics or a shorter time."
+              : "Something went wrong. Try again.";
+          setError(msg);
           return;
         }
 

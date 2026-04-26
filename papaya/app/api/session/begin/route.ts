@@ -20,19 +20,22 @@ import type { SessionState } from "@/lib/db/queries/sessions";
 import type { Problem } from "@/types/problem";
 
 const Body = z.object({
-  topic_ids: z.array(z.string()).min(1).max(5),
+  topic_ids: z.array(z.string()).min(1).max(20),
   time_budget_minutes: z.number().min(1).max(120).default(20),
   mode: z.enum(["practice", "quickfire", "assessment"]).default("practice"),
+  standard_code: z.string().max(50).optional(),
 });
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = Body.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const firstIssue = parsed.error.issues[0]?.message ?? "Invalid request";
+    return NextResponse.json({ error: firstIssue }, { status: 400 });
   }
 
-  const { topic_ids, time_budget_minutes, mode } = parsed.data;
+  try {
+  const { topic_ids, time_budget_minutes, mode, standard_code } = parsed.data;
 
   // --- Resolve or create user ---
   let user = null;
@@ -138,6 +141,9 @@ export async function POST(req: Request) {
             difficulty: difficulties[(batchStart + i) % difficulties.length],
             userId: user!.id,
             variationSeed: batchStart + i,
+            // 2 out of every 3 AI problems for grades 3+ are word problems
+            preferWordProblem: meta.grade_band !== "k2" && (batchStart + i) % 3 !== 0,
+            standardCode: standard_code,
           },
           currentIds
         )
@@ -148,6 +154,8 @@ export async function POST(req: Request) {
         if (result.status === "fulfilled" && !queueIds.has(result.value.id)) {
           queueIds.add(result.value.id);
           problemObjects.push(result.value);
+        } else if (result.status === "rejected") {
+          console.error("[session/begin] AI generation failed:", result.reason?.message ?? result.reason);
         }
       }
     }
@@ -205,4 +213,9 @@ export async function POST(req: Request) {
   }
 
   return res;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unexpected server error";
+    console.error("[session/begin]", err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

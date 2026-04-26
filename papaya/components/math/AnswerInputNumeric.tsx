@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 
 interface AnswerInputNumericProps {
   value: string;
   disabled: boolean;
   correctAnswer?: string | null;
+  answerLabel?: string | null;
   onChange: (val: string) => void;
   onSubmit: () => void;
 }
@@ -14,23 +15,28 @@ export function AnswerInputNumeric({
   value,
   disabled,
   correctAnswer,
+  answerLabel,
   onChange,
   onSubmit,
 }: AnswerInputNumericProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const showResult = disabled && correctAnswer !== undefined;
-  const isCorrect = showResult && parseFloat(value) !== undefined &&
-    correctAnswer !== null &&
+  const isCorrect = showResult && correctAnswer !== null &&
     Math.abs(parseFloat(value) - parseFloat(correctAnswer ?? "")) <= 0.001;
 
   let borderClass = "border-gray-300 focus:border-indigo-500 focus:ring-indigo-200";
   if (showResult && isCorrect) borderClass = "border-green-500 bg-green-50";
   else if (showResult && !isCorrect) borderClass = "border-red-400 bg-red-50";
 
+  const isPrefix = answerLabel?.includes("=") ?? false;
+
   return (
     <div className="flex flex-col gap-3 w-full">
       <div className="flex gap-2 items-center">
+        {isPrefix && answerLabel && (
+          <span className="text-gray-700 font-semibold text-lg shrink-0">{answerLabel}</span>
+        )}
         <input
           ref={inputRef}
           type="text"
@@ -49,12 +55,15 @@ export function AnswerInputNumeric({
             ${disabled ? "cursor-default" : ""}
           `}
         />
+        {!isPrefix && answerLabel && (
+          <span className="text-gray-500 text-base shrink-0">{answerLabel}</span>
+        )}
         {!disabled && (
           <button
             onClick={onSubmit}
             disabled={!value.trim()}
             className="
-              rounded-xl bg-indigo-600 px-5 py-3 text-white font-semibold text-base
+              shrink-0 rounded-xl bg-indigo-600 px-5 py-3 text-white font-semibold text-base
               hover:bg-indigo-700 active:scale-95 transition-all
               disabled:opacity-40 disabled:cursor-not-allowed
             "

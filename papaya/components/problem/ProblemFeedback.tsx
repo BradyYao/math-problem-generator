@@ -22,8 +22,6 @@ export function ProblemFeedback({
   sessionComplete,
   onNext,
 }: ProblemFeedbackProps) {
-  const deltaSign = skillDelta >= 0 ? "+" : "";
-
   return (
     <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto">
       {/* Result banner */}
@@ -64,8 +62,8 @@ export function ProblemFeedback({
 
       {/* Skill delta */}
       <p className="text-xs text-gray-400">
-        Skill: <span className={skillDelta >= 0 ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
-          {deltaSign}{(skillDelta * 100).toFixed(1)}%
+        <span className={skillDelta > 0 ? "text-green-600 font-medium" : skillDelta < 0 ? "text-red-500 font-medium" : "text-gray-400"}>
+          {skillDelta > 0 ? "↑ Skill growing" : skillDelta < 0 ? "Keep practicing — you'll get there" : "Skill steady"}
         </span>
       </p>
 

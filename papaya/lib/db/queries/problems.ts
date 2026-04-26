@@ -91,12 +91,13 @@ export async function insertProblem(
   const rows = await sql`
     INSERT INTO problems (
       topic_id, difficulty, answer_type, stem_latex, choices,
-      correct_answer, tolerance, hint_1, hint_2, hint_3,
-      explanation, source, quality_score
+      correct_answer, tolerance, answer_label, problem_format,
+      hint_1, hint_2, hint_3, explanation, source, quality_score
     ) VALUES (
       ${problem.topic_id}, ${problem.difficulty}, ${problem.answer_type},
       ${problem.stem_latex}, ${JSON.stringify(problem.choices)},
       ${problem.correct_answer}, ${problem.tolerance},
+      ${problem.answer_label ?? null}, ${problem.problem_format ?? null},
       ${problem.hint_1}, ${problem.hint_2}, ${problem.hint_3},
       ${problem.explanation}, ${problem.source}, ${problem.quality_score}
     )

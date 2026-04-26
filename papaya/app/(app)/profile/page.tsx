@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { LeaderboardWidget } from "@/components/leaderboard/LeaderboardWidget";
 
 interface ProfileData {
   display_name: string | null;
@@ -135,6 +136,12 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* This week's leaderboard */}
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900 mb-3">This Week&apos;s Leaderboard</h2>
+          <LeaderboardWidget />
+        </div>
 
         {/* Start practicing CTA */}
         <Link
