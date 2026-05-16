@@ -51,3 +51,4 @@ export async function invalidateSkillCache(
 ): Promise<void> {
   await redis.del(skillKey(userId, topicId));
 }
+

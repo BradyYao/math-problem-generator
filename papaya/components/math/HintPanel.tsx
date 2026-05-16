@@ -16,7 +16,7 @@ interface RevealedHint {
 }
 
 const HINT_LABELS = ["", "Direction", "First Step", "Almost There"];
-const HINT_PENALTIES = [0, -1, -3, -6];
+const HINT_PENALTIES = [0, 0, -3, -6];
 
 export function HintPanel({ sessionId, currentHintsUsed, disabled, onHintRevealed }: HintPanelProps) {
   const [hints, setHints] = useState<RevealedHint[]>([]);

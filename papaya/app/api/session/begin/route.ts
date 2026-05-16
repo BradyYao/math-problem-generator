@@ -16,6 +16,7 @@ import { selectProblemsForSession, getSeenProblemIds } from "@/lib/db/queries/pr
 import { getOrGenerateProblem } from "@/lib/ai/problem-generator";
 import { estimateProblemCount } from "@/lib/skill/selection";
 import { GUEST_COOKIE, buildGuestCookie } from "@/lib/auth/guest";
+import { getTopicsWithFallback } from "@/lib/db/queries/topics";
 import type { SessionState } from "@/lib/db/queries/sessions";
 import type { Problem } from "@/types/problem";
 
@@ -77,11 +78,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Could not resolve user" }, { status: 500 });
   }
 
-  // --- Fetch all topic metadata in one query ---
-  const topicRows = await sql`
-    SELECT id, name, grade_band FROM topics WHERE id = ANY(${topic_ids}::text[])
-  ` as Array<{ id: string; name: string; grade_band: string }>;
-  const topicMap = new Map(topicRows.map((r) => [r.id, r]));
+  const topicMap = await getTopicsWithFallback(topic_ids);
 
   // --- Build problem queue ---
   const totalProblems = estimateProblemCount(time_budget_minutes);
@@ -119,45 +116,39 @@ export async function POST(req: Request) {
     }
   }
 
-  // Step 2: fill deficits with AI generation in small batches.
-  // Batches of 5 avoid rate limits, and each batch sees previous results (no duplicates).
-  const BATCH_SIZE = 5;
-  const difficulties: Array<1 | 2 | 3 | 4 | 5> = [3, 3, 3, 2, 4]; // ~70/20/10 spread per batch
+  // Step 2: fill deficits with AI generation in one parallel batch.
+  // All topics' needed problems are collected first, then fired at once (capped at 5)
+  // so we make exactly one round of Claude API calls — keeping total latency under ~6s.
+  const AI_CAP = 5;
+  const difficulties: Array<1 | 2 | 3 | 4 | 5> = [3, 3, 3, 2, 4]; // ~70/20/10 spread
 
+  const allNeeded: Parameters<typeof getOrGenerateProblem>[0][] = [];
   for (const { topicId, count } of deficits) {
     const meta = topicMap.get(topicId)!;
+    for (let i = 0; i < count && allNeeded.length + problemObjects.length < totalProblems; i++) {
+      allNeeded.push({
+        topicId,
+        topicName: meta.name,
+        gradeBand: meta.grade_band as "k2" | "3-5" | "6-8" | "9-12",
+        difficulty: difficulties[i % difficulties.length],
+        userId: user!.id,
+        variationSeed: i,
+        preferWordProblem: meta.grade_band !== "k2" && i % 3 !== 0,
+        standardCode: standard_code,
+      });
+    }
+  }
 
-    for (let batchStart = 0; batchStart < count && problemObjects.length < totalProblems; batchStart += BATCH_SIZE) {
-      const batchCount = Math.min(BATCH_SIZE, count - batchStart, totalProblems - problemObjects.length);
-      // Pass the full queueIds set (includes previously-seen + current session) as exclusions
-      const currentIds = [...queueIds];
-
-      const batch = Array.from({ length: batchCount }, (_, i) =>
-        getOrGenerateProblem(
-          {
-            topicId,
-            topicName: meta.name,
-            gradeBand: meta.grade_band as "k2" | "3-5" | "6-8" | "9-12",
-            difficulty: difficulties[(batchStart + i) % difficulties.length],
-            userId: user!.id,
-            variationSeed: batchStart + i,
-            // 2 out of every 3 AI problems for grades 3+ are word problems
-            preferWordProblem: meta.grade_band !== "k2" && (batchStart + i) % 3 !== 0,
-            standardCode: standard_code,
-          },
-          currentIds
-        )
-      );
-
-      const results = await Promise.allSettled(batch);
-      for (const result of results) {
-        if (result.status === "fulfilled" && !queueIds.has(result.value.id)) {
-          queueIds.add(result.value.id);
-          problemObjects.push(result.value);
-        } else if (result.status === "rejected") {
-          console.error("[session/begin] AI generation failed:", result.reason?.message ?? result.reason);
-        }
-      }
+  const currentIds = [...queueIds];
+  const results = await Promise.allSettled(
+    allNeeded.slice(0, AI_CAP).map((opts) => getOrGenerateProblem(opts, currentIds))
+  );
+  for (const result of results) {
+    if (result.status === "fulfilled" && !queueIds.has(result.value.id)) {
+      queueIds.add(result.value.id);
+      problemObjects.push(result.value);
+    } else if (result.status === "rejected") {
+      console.error("[session/begin] AI generation failed:", result.reason?.message ?? result.reason);
     }
   }
 

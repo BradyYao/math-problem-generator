@@ -1,0 +1,13 @@
+1. There should be more than one way to input answers. Such as inputting x=12 vs just 12. A change that can be made to fix this is making
+an x=__ before the box or just putting a label at the end if there is a problem that asks how many of __ there is.
+2.Explaining the problem when you get it wrong and when you get it right
+3.Either remove or make the "skill" feature more clear
+4.Add some rewards when you get to certain amounts of Papaya points
+5.Be able to input problems in your school homework when you click on the school homework option and help with the problem instead of just giving
+the person random problems that may not be related to the homework
+6.Add a leaderboard that you can see names
+7.Don't make it so you lose points on the first hint
+8.Later, I can enter standards in so the problems are accurate to what students are learning in school
+9.Add more word problems so students can become more used to picking apart the word problems
+10. Be aple to pick a topic that you want to work on such as algebra, geometry, etc.
+11.Separate the grade levels because a lot can happen from 6-8 or from 9-12 

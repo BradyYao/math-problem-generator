@@ -55,7 +55,7 @@ export default function SessionSummaryPage({ params }: PageProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -64,7 +64,7 @@ export default function SessionSummaryPage({ params }: PageProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-gray-500">Could not load session summary.</p>
-        <Link href="/practice" className="text-indigo-600 underline">Back to Practice</Link>
+        <Link href="/practice" className="text-orange-500 underline">Back to Practice</Link>
       </div>
     );
   }
@@ -73,23 +73,26 @@ export default function SessionSummaryPage({ params }: PageProps) {
   const seconds = data.total_time_seconds % 60;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen pb-16" style={{ background: "linear-gradient(180deg, #fff7ed 0%, #f9fafb 40%)" }}>
       <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
         {/* Header */}
-        <h1 className="text-2xl font-bold text-gray-900">Session Complete!</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Session Complete! 🎉</h1>
 
         {/* Score card */}
-        <div className="rounded-2xl bg-indigo-600 text-white p-6 flex justify-between items-center">
+        <div
+          className="rounded-2xl text-white p-6 flex justify-between items-center shadow-lg"
+          style={{ background: "linear-gradient(135deg, #f97316 0%, #fb923c 50%, #fbbf24 100%)" }}
+        >
           <div>
-            <p className="text-indigo-200 text-sm">Papaya Points</p>
+            <p className="text-orange-100 text-sm">Papaya Points</p>
             <p className="text-4xl font-bold">{data.papaya_score}</p>
           </div>
           <div className="text-right">
-            <p className="text-indigo-200 text-sm">Accuracy</p>
+            <p className="text-orange-100 text-sm">Accuracy</p>
             <p className="text-4xl font-bold">{data.accuracy}%</p>
           </div>
           <div className="text-right">
-            <p className="text-indigo-200 text-sm">Time</p>
+            <p className="text-orange-100 text-sm">Time</p>
             <p className="text-2xl font-bold">{minutes}:{String(seconds).padStart(2, "0")}</p>
           </div>
         </div>
@@ -140,13 +143,13 @@ export default function SessionSummaryPage({ params }: PageProps) {
         <div className="flex gap-3">
           <Link
             href="/onboarding"
-            className="flex-1 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold py-3.5 text-center hover:bg-indigo-50 transition-colors"
+            className="flex-1 rounded-xl border-2 border-orange-500 text-orange-600 font-semibold py-3.5 text-center hover:bg-orange-50 transition-colors"
           >
             Practice Again
           </Link>
           <Link
             href="/"
-            className="flex-1 rounded-xl bg-indigo-600 text-white font-semibold py-3.5 text-center hover:bg-indigo-700 transition-colors"
+            className="flex-1 rounded-xl bg-orange-500 text-white font-semibold py-3.5 text-center hover:bg-orange-600 transition-colors"
           >
             Done
           </Link>

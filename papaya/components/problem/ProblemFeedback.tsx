@@ -44,7 +44,7 @@ export function ProblemFeedback({
         {/* Score earned */}
         {scoreBreakdown.total > 0 && (
           <div className="ml-auto text-right">
-            <p className="font-bold text-indigo-700 text-lg">+{scoreBreakdown.total}</p>
+            <p className="font-bold text-orange-600 text-lg">+{scoreBreakdown.total}</p>
             <p className="text-xs text-gray-500">points</p>
           </div>
         )}
@@ -79,8 +79,8 @@ export function ProblemFeedback({
       <button
         onClick={onNext}
         className="
-          w-full rounded-xl bg-indigo-600 py-3.5 text-white font-semibold text-base
-          hover:bg-indigo-700 active:scale-[0.98] transition-all mt-2
+          w-full rounded-xl bg-orange-500 py-3.5 text-white font-semibold text-base
+          hover:bg-orange-600 active:scale-[0.98] transition-all mt-2 shadow-sm shadow-orange-200
         "
       >
         {sessionComplete ? "See Results" : "Next Problem"}

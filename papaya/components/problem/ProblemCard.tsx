@@ -90,8 +90,8 @@ export function ProblemCard({
         <button
           onClick={onSubmit}
           className="
-            w-full rounded-xl bg-indigo-600 py-3.5 text-white font-semibold text-base
-            hover:bg-indigo-700 active:scale-[0.98] transition-all
+            w-full rounded-xl bg-orange-500 py-3.5 text-white font-semibold text-base
+            hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm shadow-orange-200
           "
         >
           Check Answer

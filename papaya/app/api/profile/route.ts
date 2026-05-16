@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getUserByClerkId } from "@/lib/db/queries/users";
 import { getUserScore, getUserRank } from "@/lib/redis/leaderboard-cache";
+import { getAllTimePoints } from "@/lib/redis/points-cache";
 import { getRecentSessions } from "@/lib/db/queries/sessions";
+import { MILESTONES } from "@/lib/achievements/milestones";
 import { sql } from "@/lib/db";
 
 export async function GET() {
@@ -16,18 +18,20 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const [weeklyScore, weeklyRank, recentSessions, allTimeRows] = await Promise.all([
+  const [weeklyScore, weeklyRank, allTimePoints, recentSessions, allTimeRows, earnedRows] = await Promise.all([
     getUserScore(user.id),
     getUserRank(user.id),
+    getAllTimePoints(user.id),
     getRecentSessions(user.id, 10),
     sql`
       SELECT
-        COUNT(*)::int AS total_sessions,
-        COALESCE(SUM(problems_correct), 0)::int AS total_correct,
-        COALESCE(SUM(problems_delivered), 0)::int AS total_problems
-      FROM sessions
-      WHERE user_id = ${user.id} AND is_complete = true
+        (SELECT COUNT(*)::int FROM sessions WHERE user_id = ${user.id} AND is_complete = true) AS total_sessions,
+        COALESCE(SUM(ss.attempts), 0)::int AS total_problems,
+        COALESCE(SUM(ss.correct), 0)::int AS total_correct
+      FROM skill_states ss
+      WHERE ss.user_id = ${user.id}
     `,
+    sql`SELECT achievement_id FROM user_achievements WHERE user_id = ${user.id}`,
   ]);
 
   const allTime = allTimeRows[0] as {
@@ -35,6 +39,8 @@ export async function GET() {
     total_correct: number;
     total_problems: number;
   };
+
+  const earnedIds = new Set((earnedRows as Array<{ achievement_id: string }>).map(r => r.achievement_id));
 
   const sessions = recentSessions.map((s) => ({
     id: s.id,
@@ -45,11 +51,22 @@ export async function GET() {
     score: s.state?.papaya_score_accumulator ?? 0,
   }));
 
+  const milestones = MILESTONES.map(m => ({
+    id: m.id,
+    name: m.name,
+    threshold: m.threshold,
+    emoji: m.emoji,
+    description: m.description,
+    earned: earnedIds.has(m.id) || allTimePoints >= m.threshold,
+  }));
+
   return NextResponse.json({
     display_name: user.display_name,
     weekly_score: weeklyScore,
-    weekly_rank: weeklyRank != null ? weeklyRank + 1 : null, // 1-indexed
+    weekly_rank: weeklyRank != null ? weeklyRank + 1 : null,
     all_time: allTime,
+    all_time_points: allTimePoints,
     recent_sessions: sessions,
+    milestones,
   });
 }

@@ -9,7 +9,7 @@
  * 5. Async: flush to Postgres
  * 6. Return result
  */
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { getSessionState, setSessionState } from "@/lib/redis/session-state";
@@ -155,8 +155,8 @@ export async function POST(
   // Write updated state to Redis
   await setSessionState(sessionId, newState);
 
-  // ─── Async Postgres flush (fire-and-forget) ──────────────────────────────
-  void flushToPostgres({
+  // ─── Async Postgres flush ────────────────────────────────────────────────
+  after(() => flushToPostgres({
     sessionId,
     userId: user.id,
     problemId: problem_id,
@@ -169,7 +169,7 @@ export async function POST(
     topicId: problem.topic_id,
     newState,
     sessionComplete,
-  });
+  }));
 
   return NextResponse.json({
     is_correct,
@@ -250,7 +250,10 @@ async function flushToPostgres(params: {
     );
 
     const dbSession = await import("@/lib/db/queries/sessions");
-    await dbSession.updateSessionState(params.sessionId, params.newState as never);
+    const answersRows = await dbSession.getSessionAnswers(params.sessionId);
+    const delivered = answersRows.length;
+    const correct = answersRows.filter(a => a.is_correct).length;
+    await dbSession.updateSessionState(params.sessionId, params.newState as never, delivered, correct);
 
     if (params.sessionComplete) {
       await dbSession.endSession(params.sessionId);

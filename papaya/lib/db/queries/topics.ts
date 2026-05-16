@@ -1,4 +1,27 @@
 import { sql } from "@/lib/db";
+import taxonomyRaw from "@/content/topics/taxonomy.json";
+
+type TopicMeta = Pick<Topic, "id" | "name" | "grade_band">;
+
+// Built once at module load — never per-request
+const taxonomyMap = new Map<string, TopicMeta>(
+  (taxonomyRaw as TopicMeta[]).map((t) => [t.id, t])
+);
+
+/**
+ * Fetch topic metadata for a list of IDs, falling back to the local taxonomy
+ * for any ID not yet seeded into the database.
+ */
+export async function getTopicsWithFallback(topicIds: string[]): Promise<Map<string, TopicMeta>> {
+  const rows = await sql`
+    SELECT id, name, grade_band FROM topics WHERE id = ANY(${topicIds}::text[])
+  ` as TopicMeta[];
+  const map = new Map<string, TopicMeta>(rows.map((r) => [r.id, r]));
+  for (const id of topicIds) {
+    if (!map.has(id) && taxonomyMap.has(id)) map.set(id, taxonomyMap.get(id)!);
+  }
+  return map;
+}
 
 export interface Topic {
   id: string;

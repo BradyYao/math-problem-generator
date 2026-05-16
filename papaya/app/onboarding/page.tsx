@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const GOALS = [
-  { id: "sat", label: "SAT prep", icon: "📝" },
-  { id: "act", label: "ACT prep", icon: "📋" },
-  { id: "amc", label: "Competition", icon: "🏅" },
-  { id: "school", label: "School / homework help", icon: "🏫" },
-  { id: "casual", label: "Just practice", icon: "🎯" },
+  { id: "sat",     label: "SAT prep",             icon: "📝", color: "hover:border-orange-400 hover:bg-orange-50", active: "border-orange-400 bg-orange-50" },
+  { id: "act",     label: "ACT prep",             icon: "📋", color: "hover:border-yellow-400 hover:bg-yellow-50", active: "border-yellow-400 bg-yellow-50" },
+  { id: "amc",     label: "Competition",          icon: "🏅", color: "hover:border-purple-400 hover:bg-purple-50", active: "border-purple-400 bg-purple-50" },
+  { id: "school",  label: "School / homework help", icon: "🏫", color: "hover:border-blue-400 hover:bg-blue-50",   active: "border-blue-400 bg-blue-50" },
+  { id: "casual",  label: "Just practice",        icon: "🎯", color: "hover:border-green-400 hover:bg-green-50",  active: "border-green-400 bg-green-50" },
 ];
 
 const GRADE_BANDS_DATA = [
@@ -24,10 +24,10 @@ const GRADE_BANDS_DATA = [
 ] as const;
 
 const TIME_OPTIONS = [
-  { id: 5,  label: "5 min",  sub: "Quick hit" },
-  { id: 10, label: "10 min", sub: "Short session" },
-  { id: 20, label: "20 min", sub: "Solid practice" },
-  { id: 30, label: "30 min", sub: "Deep work" },
+  { id: 5,  label: "5 min",  sub: "Quick hit",      color: "hover:border-green-400 hover:bg-green-50" },
+  { id: 10, label: "10 min", sub: "Short session",   color: "hover:border-blue-400 hover:bg-blue-50" },
+  { id: 20, label: "20 min", sub: "Solid practice",  color: "hover:border-orange-400 hover:bg-orange-50" },
+  { id: 30, label: "30 min", sub: "Deep work",       color: "hover:border-purple-400 hover:bg-purple-50" },
 ];
 
 const EXAM_TOPICS: Record<string, string[]> = {
@@ -42,13 +42,15 @@ const DEFAULT_TOPICS: Record<string, string[]> = {
   "9-12": ["algebra.alg2.quadratic-equations", "algebra.alg1.linear-systems"],
 };
 
-const DOMAIN_LABELS: Record<string, string> = {
-  number: "Numbers & Operations",
-  algebra: "Algebra",
-  geometry: "Geometry",
-  statistics: "Statistics & Data",
-  calculus: "Calculus",
-  trigonometry: "Trigonometry",
+const DOMAIN_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
+  number:      { icon: "🔢", color: "hover:border-blue-400 hover:bg-blue-50",   label: "Numbers & Operations" },
+  algebra:     { icon: "✏️", color: "hover:border-purple-400 hover:bg-purple-50", label: "Algebra" },
+  geometry:    { icon: "📐", color: "hover:border-green-400 hover:bg-green-50",  label: "Geometry" },
+  functions:   { icon: "📈", color: "hover:border-teal-400 hover:bg-teal-50",    label: "Functions" },
+  measurement: { icon: "📏", color: "hover:border-cyan-400 hover:bg-cyan-50",    label: "Measurement & Data" },
+  stats:       { icon: "📊", color: "hover:border-indigo-400 hover:bg-indigo-50", label: "Statistics & Probability" },
+  precalc:     { icon: "∑",  color: "hover:border-rose-400 hover:bg-rose-50",    label: "Precalculus" },
+  competition: { icon: "🏅", color: "hover:border-amber-400 hover:bg-amber-50",  label: "Competition Math" },
 };
 
 interface TopicGroup {
@@ -84,7 +86,7 @@ export default function OnboardingPage() {
         setTopicGroups(
           Array.from(grouped.entries()).map(([domain, ids]) => ({
             domain,
-            label: DOMAIN_LABELS[domain] ?? domain.charAt(0).toUpperCase() + domain.slice(1),
+            label: DOMAIN_CONFIG[domain]?.label ?? domain.charAt(0).toUpperCase() + domain.slice(1),
             topicIds: ids,
           }))
         );
@@ -109,7 +111,6 @@ export default function OnboardingPage() {
   }
 
   function handleTopicSelect(topicIds: string[]) {
-    // Cap at 5 to stay within serverless AI-generation budget
     const MAX = 5;
     const selected = topicIds.length > MAX
       ? [...topicIds].sort(() => Math.random() - 0.5).slice(0, MAX)
@@ -119,7 +120,6 @@ export default function OnboardingPage() {
   }
 
   function handleMixedSelect() {
-    // One topic per domain, up to 5 domains, for session variety
     const mixed = topicGroups.length > 0
       ? topicGroups
           .slice(0, 5)
@@ -162,14 +162,15 @@ export default function OnboardingPage() {
   const stepIndex = currentSteps.indexOf(step);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+    <div className="flex flex-1 flex-col items-center justify-center px-6 py-16"
+      style={{ background: "linear-gradient(180deg, #fff7ed 0%, #ffffff 60%)" }}>
       {/* Progress dots */}
       <div className="flex gap-2 mb-10">
         {currentSteps.map((s, i) => (
           <div
             key={s}
             className={`h-2 rounded-full transition-all ${
-              i <= stepIndex ? "w-6 bg-indigo-600" : "w-2 bg-zinc-200"
+              i <= stepIndex ? "w-6 bg-orange-500" : "w-2 bg-zinc-200"
             }`}
           />
         ))}
@@ -188,7 +189,7 @@ export default function OnboardingPage() {
               <button
                 key={g.id}
                 onClick={() => handleGoalSelect(g.id)}
-                className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                className={`flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left transition-all ${g.color}`}
               >
                 <span className="text-2xl">{g.icon}</span>
                 <span className="font-medium text-zinc-900">{g.label}</span>
@@ -211,7 +212,7 @@ export default function OnboardingPage() {
               <button
                 key={g.id}
                 onClick={() => handleGradeSelect(g.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-5 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-5 hover:border-orange-400 hover:bg-orange-50 transition-all"
               >
                 <span className="text-lg font-bold text-zinc-900">{g.label}</span>
                 <span className="text-xs text-zinc-400 mt-1">{g.sub}</span>
@@ -237,29 +238,34 @@ export default function OnboardingPage() {
           </p>
           {topicsLoading ? (
             <div className="flex justify-center py-8">
-              <div className="w-8 h-8 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+              <div className="w-8 h-8 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {topicGroups.map((g) => (
-                <button
-                  key={g.domain}
-                  onClick={() => handleTopicSelect(g.topicIds)}
-                  className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
-                >
-                  <span className="font-medium text-zinc-900">{g.label}</span>
-                </button>
-              ))}
+              {topicGroups.map((g) => {
+                const cfg = DOMAIN_CONFIG[g.domain] ?? { icon: "📚", color: "hover:border-orange-400 hover:bg-orange-50", label: g.label };
+                return (
+                  <button
+                    key={g.domain}
+                    onClick={() => handleTopicSelect(g.topicIds)}
+                    className={`flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left transition-all ${cfg.color}`}
+                  >
+                    <span className="text-xl">{cfg.icon}</span>
+                    <span className="font-medium text-zinc-900">{g.label}</span>
+                  </button>
+                );
+              })}
               <button
                 onClick={handleMixedSelect}
-                className="flex items-center gap-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-5 py-4 text-left hover:border-indigo-400 hover:bg-indigo-100 transition-colors"
+                className="flex items-center gap-4 rounded-2xl border-2 border-orange-200 bg-orange-50 px-5 py-4 text-left hover:border-orange-400 hover:bg-orange-100 transition-all"
               >
-                <span className="font-medium text-indigo-700">Mix it up — all topics</span>
+                <span className="text-xl">🎲</span>
+                <span className="font-medium text-orange-700">Mix it up — all topics</span>
               </button>
             </div>
           )}
           {/* Optional standards input */}
-          <div className="mt-2 flex flex-col gap-1">
+          <div className="mt-4 flex flex-col gap-1">
             <label className="text-xs text-zinc-400 font-medium">
               Studying a specific standard? (optional)
             </label>
@@ -268,7 +274,7 @@ export default function OnboardingPage() {
               value={standardCode}
               onChange={e => setStandardCode(e.target.value)}
               placeholder="e.g. 6.EE.A.1 or 8.G.B.7"
-              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
             />
           </div>
 
@@ -294,7 +300,7 @@ export default function OnboardingPage() {
               <button
                 key={t.id}
                 onClick={() => handleTimeSelect(t.id)}
-                className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white px-5 py-6 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                className={`flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white px-5 py-6 transition-all ${t.color}`}
               >
                 <span className="text-xl font-bold text-zinc-900">{t.label}</span>
                 <span className="text-sm text-zinc-400 mt-1">{t.sub}</span>

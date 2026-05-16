@@ -110,7 +110,7 @@ export default function PracticeSessionPage({ params }: PageProps) {
   if (store.phase === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -124,12 +124,15 @@ export default function PracticeSessionPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-orange-50/30">
       {/* Top progress bar */}
-      <div className="w-full bg-gray-200 h-1.5">
+      <div className="w-full bg-orange-100 h-1.5">
         <div
-          className="bg-indigo-600 h-1.5 transition-all duration-500"
-          style={{ width: `${((store.currentIndex) / store.totalProblems) * 100}%` }}
+          className="h-1.5 transition-all duration-500"
+          style={{
+            width: `${((store.currentIndex) / store.totalProblems) * 100}%`,
+            background: "linear-gradient(90deg, #f97316, #fb923c)",
+          }}
         />
       </div>
 
@@ -142,7 +145,7 @@ export default function PracticeSessionPage({ params }: PageProps) {
           >
             ← Home
           </button>
-          <span className="text-sm font-semibold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
+          <span className="text-sm font-semibold text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
             {store.papayaScore} pts
           </span>
         </div>

@@ -21,7 +21,7 @@ export function AnswerInputNumeric({
 }: AnswerInputNumericProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const showResult = disabled && correctAnswer !== undefined;
+  const showResult = disabled && correctAnswer != null;
   const isCorrect = showResult && correctAnswer !== null &&
     Math.abs(parseFloat(value) - parseFloat(correctAnswer ?? "")) <= 0.001;
 

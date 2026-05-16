@@ -7,6 +7,7 @@ import { getCachedSkill } from "@/lib/redis/skill-cache";
 import { getSkillState, DEFAULT_MU } from "@/lib/db/queries/skills";
 import { selectProblemsForSession } from "@/lib/db/queries/problems";
 import { getOrGenerateProblem } from "@/lib/ai/problem-generator";
+import { getTopicsWithFallback } from "@/lib/db/queries/topics";
 import { muToTargetDifficulty } from "@/lib/skill/model";
 import { estimateProblemCount } from "@/lib/skill/selection";
 import type { SessionState } from "@/lib/db/queries/sessions";
@@ -32,48 +33,65 @@ export async function POST(req: Request) {
 
   const { topic_ids, time_budget_minutes, mode } = parsed.data;
   const timeBudget = time_budget_minutes ?? (mode === "quickfire" ? 5 : 20);
-  const totalProblems = mode === "quickfire"
-    ? 3
-    : estimateProblemCount(timeBudget);
-
-  // Build problem queue: select problems for each topic, weighted
-  const problemQueue: string[] = [];
+  const totalProblems = mode === "quickfire" ? 3 : estimateProblemCount(timeBudget);
   const perTopic = Math.ceil(totalProblems / topic_ids.length);
 
-  for (const topicId of topic_ids) {
-    // Get skill state for this topic
-    const cached = await getCachedSkill(user.id, topicId);
-    const mu = cached?.mu ?? (await getSkillState(user.id, topicId))?.mu ?? DEFAULT_MU;
-    const targetDifficulty = muToTargetDifficulty(mu);
+  // Batch all topic metadata and skill lookups in parallel
+  const [topicMap, ...skillResults] = await Promise.all([
+    getTopicsWithFallback(topic_ids),
+    ...topic_ids.map(async (topicId) => {
+      const cached = await getCachedSkill(user.id, topicId);
+      const mu = cached?.mu ?? (await getSkillState(user.id, topicId))?.mu ?? DEFAULT_MU;
+      return { topicId, difficulty: muToTargetDifficulty(mu) };
+    }),
+  ]);
 
-    // Try library first
-    const problems = await selectProblemsForSession(topicId, targetDifficulty, perTopic);
-    problemQueue.push(...problems.map((p: Problem) => p.id));
+  const difficultyMap = new Map(
+    (skillResults as Array<{ topicId: string; difficulty: number }>).map((s) => [s.topicId, s.difficulty])
+  );
 
-    // If library short, fill with AI generation (up to 2 problems)
-    const deficit = perTopic - problems.length;
-    if (deficit > 0) {
-      // Get topic metadata for AI generation
-      const topicRows = await import("@/lib/db").then(({ sql }) =>
-        sql`SELECT name, grade_band FROM topics WHERE id = ${topicId}`
-      );
-      const topicMeta = topicRows[0] as { name: string; grade_band: string } | undefined;
-      if (topicMeta) {
-        for (let i = 0; i < Math.min(deficit, 2); i++) {
-          try {
-            const gen = await getOrGenerateProblem({
-              topicId,
-              topicName: topicMeta.name,
-              gradeBand: topicMeta.grade_band as "k2" | "3-5" | "6-8" | "9-12",
-              difficulty: targetDifficulty,
-              userId: user.id,
-            }, problemQueue);
-            problemQueue.push(gen.id);
-          } catch {
-            // If AI fails, session continues with fewer problems
-          }
-        }
-      }
+  // Fetch library problems for all topics in parallel
+  const perTopicProblems = await Promise.all(
+    topic_ids.map((topicId) =>
+      selectProblemsForSession(topicId, difficultyMap.get(topicId) ?? 3, perTopic)
+    )
+  );
+
+  const problemQueue: string[] = [];
+  const deficits: Array<{ topicId: string; difficulty: number; count: number }> = [];
+
+  for (let i = 0; i < topic_ids.length; i++) {
+    const topicId = topic_ids[i];
+    const problems = perTopicProblems[i] as Problem[];
+    problemQueue.push(...problems.map((p) => p.id));
+
+    const deficit = Math.min(perTopic - problems.length, 2); // cap AI fill at 2 per topic
+    if (deficit > 0 && topicMap.has(topicId)) {
+      deficits.push({ topicId, difficulty: difficultyMap.get(topicId) ?? 3, count: deficit });
+    }
+  }
+
+  // Fill deficits in one parallel batch (capped at 5 total)
+  if (deficits.length > 0) {
+    const jobs = deficits.flatMap(({ topicId, difficulty, count }) => {
+      const meta = topicMap.get(topicId)!;
+      return Array.from({ length: count }, () => ({ topicId, difficulty, meta }));
+    }).slice(0, 5);
+
+    const results = await Promise.allSettled(
+      jobs.map(({ topicId, difficulty, meta }) =>
+        getOrGenerateProblem({
+          topicId,
+          topicName: meta.name,
+          gradeBand: meta.grade_band as "k2" | "3-5" | "6-8" | "9-12",
+          difficulty: difficulty as 1 | 2 | 3 | 4 | 5,
+          userId: user.id,
+        }, problemQueue)
+      )
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") problemQueue.push(result.value.id);
     }
   }
 
@@ -84,14 +102,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fetch the first problem
   const { getProblemById } = await import("@/lib/db/queries/problems");
   const firstProblem = await getProblemById(problemQueue[0]);
   if (!firstProblem) {
     return NextResponse.json({ error: "Failed to load first problem" }, { status: 500 });
   }
 
-  // Create session in DB
   const initialState: SessionState = {
     problem_queue: problemQueue,
     current_index: 0,
@@ -109,7 +125,6 @@ export async function POST(req: Request) {
     initialState,
   });
 
-  // Write state to Redis immediately
   await setSessionState(session.id, initialState);
 
   return NextResponse.json({
