@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ClerkProvider, SignInButton, Show, UserButton } from "@clerk/nextjs";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
