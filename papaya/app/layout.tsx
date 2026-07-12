@@ -5,7 +5,7 @@ import { ClerkProvider, SignInButton, Show, UserButton } from "@clerk/nextjs";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-export default function RootLayout({ children }} {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>{children}</body>
