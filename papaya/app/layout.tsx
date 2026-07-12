@@ -3,7 +3,16 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { ClerkProvider, SignInButton, Show, UserButton } from "@clerk/nextjs";
 import "./globals.css";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
+export default function RootLayout({ children }} {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+        <GoogleAnalytics gaID={process.env.NEXT_PUBLIC_GA_ID} />
+      </html>
+  )
+}
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
